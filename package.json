@@ -11,7 +11,7 @@
     "email": "maintainers@bolt.diy"
   },
   "scripts": {
-    "deploy": "NODE_OPTIONS=--max_old_space_size=8192 npm run build && wrangler pages deploy",
+    "deploy": "NODE_OPTIONS=--max_old_space_size=8192 npm run build && wrangler pages deploy --verbose",
     "build": "NODE_OPTIONS=--max_old_space_size=8192 remix vite:build",
     "dev": "node pre-start.cjs  && remix vite:dev",
     "test": "vitest --run",
