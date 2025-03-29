@@ -153,18 +153,49 @@ ${props.summary}
 
   logger.info(`Sending llm call to ${provider.name} with model ${modelDetails.name}`);
 
-  // console.log(systemPrompt,processedMessages);
+  // Store original messages for reference
+  const originalMessages = [...messages];
+  const hasMultimodalContent = originalMessages.some((msg) => Array.isArray(msg.content));
 
-  return await _streamText({
-    model: provider.getModelInstance({
-      model: modelDetails.name,
-      serverEnv,
-      apiKeys,
-      providerSettings,
-    }),
-    system: systemPrompt,
-    maxTokens: dynamicMaxTokens,
-    messages: convertToCoreMessages(processedMessages as any),
-    ...options,
-  });
+  if (hasMultimodalContent) {
+    /*
+     * For multimodal content, we need to preserve the original array structure
+     * but make sure the roles are valid
+     */
+    const multimodalMessages = originalMessages.map((msg) => ({
+      role: msg.role === 'system' || msg.role === 'user' || msg.role === 'assistant' ? msg.role : 'user',
+      content: msg.content,
+    }));
+
+    return await _streamText({
+      model: provider.getModelInstance({
+        model: modelDetails.name,
+        serverEnv,
+        apiKeys,
+        providerSettings,
+      }),
+      system: systemPrompt,
+      maxTokens: dynamicMaxTokens,
+      messages: multimodalMessages as any,
+      ...options,
+    });
+  } else {
+    const normalizedTextMessages = processedMessages.map((msg) => ({
+      role: msg.role === 'system' || msg.role === 'user' || msg.role === 'assistant' ? msg.role : 'user',
+      content: typeof msg.content === 'string' ? msg.content : String(msg.content),
+    }));
+
+    return await _streamText({
+      model: provider.getModelInstance({
+        model: modelDetails.name,
+        serverEnv,
+        apiKeys,
+        providerSettings,
+      }),
+      system: systemPrompt,
+      maxTokens: dynamicMaxTokens,
+      messages: convertToCoreMessages(normalizedTextMessages),
+      ...options,
+    });
+  }
 }
