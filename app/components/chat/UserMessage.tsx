@@ -55,10 +55,27 @@ export function UserMessage({ content }: UserMessageProps) {
   }
 
   const textContent = stripMetadata(content);
+  const profile = useStore(profileStore);
 
   return (
-    <div className="overflow-hidden pt-[4px]">
-      <Markdown html>{textContent}</Markdown>
+    <div className="flex flex-col gap-4 bg-accent-500/10 backdrop-blur-sm p-3 py-3 w-auto rounded-lg mr-auto">
+      <div className="overflow-hidden pt-[4px]">
+        {profile?.avatar || profile?.username ? (
+          <div className="flex items-end gap-2">
+            <img
+              src={profile.avatar}
+              alt={profile?.username || 'User'}
+              className="w-[25px] h-[25px] object-cover rounded-full"
+              loading="eager"
+              decoding="sync"
+            />
+            <span className="text-bolt-elements-textPrimary text-sm">{profile?.username ? profile.username : ''}</span>
+          </div>
+        ) : (
+          <div className="i-ph:user-fill text-accent-500 text-2xl" />
+        )}
+        <Markdown html>{textContent}</Markdown>
+      </div>
     </div>
   );
 }

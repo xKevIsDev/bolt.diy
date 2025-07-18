@@ -4,7 +4,6 @@ import { classNames } from '~/utils/classNames';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
 import * as ContextMenu from '@radix-ui/react-context-menu';
 import type { FileHistory } from '~/types/actions';
-import { diffLines, type Change } from 'diff';
 import { workbenchStore } from '~/lib/stores/workbench';
 import { toast } from 'react-toastify';
 import { path } from '~/utils/path';
@@ -630,58 +629,11 @@ interface FileProps {
   onClick: () => void;
 }
 
-function File({
-  file,
-  onClick,
-  onCopyPath,
-  onCopyRelativePath,
-  selected,
-  unsavedChanges = false,
-  fileHistory = {},
-}: FileProps) {
+function File({ file, onClick, onCopyPath, onCopyRelativePath, selected, unsavedChanges = false }: FileProps) {
   const { depth, name, fullPath } = file;
 
   // Check if the file is locked
   const { locked } = workbenchStore.isFileLocked(fullPath);
-
-  const fileModifications = fileHistory[fullPath];
-
-  const { additions, deletions } = useMemo(() => {
-    if (!fileModifications?.originalContent) {
-      return { additions: 0, deletions: 0 };
-    }
-
-    const normalizedOriginal = fileModifications.originalContent.replace(/\r\n/g, '\n');
-    const normalizedCurrent =
-      fileModifications.versions[fileModifications.versions.length - 1]?.content.replace(/\r\n/g, '\n') || '';
-
-    if (normalizedOriginal === normalizedCurrent) {
-      return { additions: 0, deletions: 0 };
-    }
-
-    const changes = diffLines(normalizedOriginal, normalizedCurrent, {
-      newlineIsToken: false,
-      ignoreWhitespace: true,
-      ignoreCase: false,
-    });
-
-    return changes.reduce(
-      (acc: { additions: number; deletions: number }, change: Change) => {
-        if (change.added) {
-          acc.additions += change.value.split('\n').length;
-        }
-
-        if (change.removed) {
-          acc.deletions += change.value.split('\n').length;
-        }
-
-        return acc;
-      },
-      { additions: 0, deletions: 0 },
-    );
-  }, [fileModifications]);
-
-  const showStats = additions > 0 || deletions > 0;
 
   return (
     <FileContextMenu onCopyPath={onCopyPath} onCopyRelativePath={onCopyRelativePath} fullPath={fullPath}>
@@ -704,12 +656,6 @@ function File({
         >
           <div className="flex-1 truncate pr-2">{name}</div>
           <div className="flex items-center gap-1">
-            {showStats && (
-              <div className="flex items-center gap-1 text-xs">
-                {additions > 0 && <span className="text-green-500">+{additions}</span>}
-                {deletions > 0 && <span className="text-red-500">-{deletions}</span>}
-              </div>
-            )}
             {locked && (
               <span
                 className={classNames('shrink-0', 'i-ph:lock-simple scale-80 text-red-500')}
